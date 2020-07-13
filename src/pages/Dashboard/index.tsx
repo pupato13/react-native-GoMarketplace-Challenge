@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import FeatherIcon from 'react-native-vector-icons/Feather';
+import React, { useState, useEffect } from "react";
+import FeatherIcon from "react-native-vector-icons/Feather";
 
-import { View, Image } from 'react-native';
+import { View, Image } from "react-native";
 
-import formatValue from '../../utils/formatValue';
-import { useCart } from '../../hooks/cart';
-import api from '../../services/api';
+import formatValue from "../../utils/formatValue";
+import { useCart } from "../../hooks/cart";
+import api from "../../services/api";
 
-import FloatingCart from '../../components/FloatingCart';
+import FloatingCart from "../../components/FloatingCart";
 
 import {
   Container,
@@ -19,7 +19,7 @@ import {
   PriceContainer,
   ProductPrice,
   ProductButton,
-} from './styles';
+} from "./styles";
 
 interface Product {
   id: string;
@@ -36,13 +36,29 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     async function loadProducts(): Promise<void> {
       // TODO
+      const productsResponse = await api.get("products");
+
+      if (productsResponse.data) {
+        setProducts(productsResponse.data);
+      }
     }
 
     loadProducts();
   }, []);
 
-  function handleAddToCart(item: Product): void {
+  async function handleAddToCart(item: Product): void {
     // TODO
+
+    const product = products.find(product => {
+      return product.id === item.id;
+    });
+
+    if (!product) {
+      // Something really bad happened!
+      return;
+    }
+
+    await addToCart(item);
   }
 
   return (

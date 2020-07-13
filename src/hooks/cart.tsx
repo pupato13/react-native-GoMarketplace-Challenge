@@ -4,9 +4,9 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-} from 'react';
+} from "react";
 
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from "@react-native-community/async-storage";
 
 interface Product {
   id: string;
@@ -18,7 +18,7 @@ interface Product {
 
 interface CartContext {
   products: Product[];
-  addToCart(item: Omit<Product, 'quantity'>): void;
+  addToCart(item: Omit<Product, "quantity">): void;
   increment(id: string): void;
   decrement(id: string): void;
 }
@@ -38,6 +38,9 @@ const CartProvider: React.FC = ({ children }) => {
 
   const addToCart = useCallback(async product => {
     // TODO ADD A NEW ITEM TO THE CART
+
+    // Need to add to async storage instead of to
+    setProducts([...products, product]);
   }, []);
 
   const increment = useCallback(async id => {
