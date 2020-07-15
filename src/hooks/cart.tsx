@@ -1,127 +1,143 @@
 import React, {
-  createContext,
-  useState,
-  useCallback,
-  useContext,
-  useEffect,
+    createContext,
+    useState,
+    useCallback,
+    useContext,
+    useEffect,
 } from "react";
 
 import AsyncStorage from "@react-native-community/async-storage";
 
 interface Product {
-  id: string;
-  title: string;
-  image_url: string;
-  price: number;
-  quantity: number;
+    id: string;
+    title: string;
+    image_url: string;
+    price: number;
+    quantity: number;
 }
 
 interface CartContext {
-  products: Product[];
-  addToCart(item: Omit<Product, "quantity">): void;
-  increment(id: string): void;
-  decrement(id: string): void;
+    products: Product[];
+    addToCart(item: Omit<Product, "quantity">): void;
+    increment(id: string): void;
+    decrement(id: string): void;
 }
+
+const StorageKeyProducts = "@GoMarketplace:products";
 
 const CartContext = createContext<CartContext | null>(null);
 
 const CartProvider: React.FC = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
 
-  useEffect(() => {
-    async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
-    }
+    useEffect(() => {
+        async function loadProducts(): Promise<void> {
+            const storedProducts = await AsyncStorage.getItem(
+                StorageKeyProducts,
+            );
 
-    loadProducts();
-  }, []);
+            if (storedProducts) {
+                setProducts([...JSON.parse(storedProducts)]);
+            }
+        }
 
-  const getProduct = (productIndex: number): Product => {
-    return products[productIndex];
-  };
+        loadProducts();
+    }, []);
 
-  const getProductIndex = (id: string): number => {
-    return products.findIndex(product => product.id === id);
-  };
+    const updateAsyncStorage = async (
+        productsToStore: Product[],
+    ): Promise<void> => {
+        await AsyncStorage.setItem(
+            StorageKeyProducts,
+            JSON.stringify(productsToStore),
+        );
+    };
 
-  const addToCart = useCallback(
-    async product => {
-      // TODO ADD A NEW ITEM TO THE CART
+    const addToCart = useCallback(
+        async product => {
+            const existingProduct = products.find(
+                item => item.id === product.id,
+            );
 
-      const newProduct: Product = {
-        id: product.id,
-        image_url: product.image_url,
-        price: product.price,
-        quantity: 1,
-        title: product.title,
-      };
+            if (existingProduct) {
+                // setProducts(
+                //     products.map(item =>
+                //         item.id === product.id
+                //             ? { ...product, quantity: item.quantity + 1 }
+                //             : item,
+                //     ),
+                // );
+                await increment(product.id);
+            } else {
+                const newProduct = {
+                    ...product,
+                    quantity: 1,
+                };
 
-      // Need to add to async storage instead of to
-      setProducts([...products, newProduct]);
-    },
-    [products],
-  );
+                setProducts([...products, newProduct]);
 
-  const increment = useCallback(
-    async (id: string) => {
-      // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-      console.log("incrementing");
+                await updateAsyncStorage(products);
+            }
+        },
+        [increment, products],
+    );
 
-      const productIndex = getProductIndex(id);
+    const increment = useCallback(
+        async (id: string) => {
+            const newProducts = products.map(product =>
+                product.id === id
+                    ? { ...product, quantity: product.quantity + 1 }
+                    : product,
+            );
 
-      if (productIndex < 0) return;
+            setProducts(newProducts);
 
-      const product = getProduct(productIndex);
+            await updateAsyncStorage(newProducts);
+        },
+        [products],
+    );
 
-      product.quantity += 1;
+    const decrement = useCallback(
+        async (id: string) => {
+            let newProducts = products;
 
-      products[productIndex] = product;
-    },
-    [products, getProduct, getProductIndex],
-  );
+            const existingProduct = products.find(item => item.id === id);
 
-  const decrement = useCallback(
-    async (id: string) => {
-      // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-      console.log("decrementing");
+            if (existingProduct?.quantity === 1) {
+                newProducts = products.filter(prod => prod.id !== id);
+            } else {
+                newProducts = products.map(product =>
+                    product.id === id
+                        ? { ...product, quantity: product.quantity - 1 }
+                        : product,
+                );
+            }
 
-      const productIndex = getProductIndex(id);
+            setProducts(newProducts);
 
-      if (productIndex < 0) return;
+            await updateAsyncStorage(newProducts);
+        },
+        [products],
+    );
 
-      const product = getProduct(productIndex);
+    const value = React.useMemo(
+        () => ({ addToCart, increment, decrement, products }),
+        [products, addToCart, increment, decrement],
+    );
 
-      product.quantity -= 1;
-
-      products[productIndex] = product;
-
-      // if (product.quantity === 0) {
-      //   const newProducts = products.splice(productIndex, 1);
-
-      //   setProducts(newProducts);
-      // } else {
-      //   products[productIndex] = product;
-      // }
-    },
-    [products, getProduct, getProductIndex],
-  );
-
-  const value = React.useMemo(
-    () => ({ addToCart, increment, decrement, products }),
-    [products, addToCart, increment, decrement],
-  );
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+    return (
+        <CartContext.Provider value={value}>{children}</CartContext.Provider>
+    );
 };
 
 function useCart(): CartContext {
-  const context = useContext(CartContext);
+    const context = useContext(CartContext);
 
-  if (!context) {
-    throw new Error(`useCart must be used within a CartProvider`);
-  }
+    if (!context) {
+        throw new Error(`useCart must be used within a CartProvider`);
+    }
 
-  return context;
+    return context;
 }
 
 export { CartProvider, useCart };

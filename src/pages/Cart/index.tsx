@@ -4,130 +4,143 @@ import FeatherIcon from "react-native-vector-icons/Feather";
 import { View } from "react-native";
 
 import {
-  Container,
-  ProductContainer,
-  ProductList,
-  Product,
-  ProductImage,
-  ProductTitleContainer,
-  ProductTitle,
-  ProductPriceContainer,
-  ProductSinglePrice,
-  TotalContainer,
-  ProductPrice,
-  ProductQuantity,
-  ActionContainer,
-  ActionButton,
-  TotalProductsContainer,
-  TotalProductsText,
-  SubtotalValue,
+    Container,
+    ProductContainer,
+    ProductList,
+    Product,
+    ProductImage,
+    ProductTitleContainer,
+    ProductTitle,
+    ProductPriceContainer,
+    ProductSinglePrice,
+    TotalContainer,
+    ProductPrice,
+    ProductQuantity,
+    ActionContainer,
+    ActionButton,
+    TotalProductsContainer,
+    TotalProductsText,
+    SubtotalValue,
 } from "./styles";
 
 import { useCart } from "../../hooks/cart";
 
 import formatValue from "../../utils/formatValue";
 
-import { sum } from "../../utils/calcHelper";
+import FloatingCart from "../../components/FloatingCart";
 
 interface Product {
-  id: string;
-  title: string;
-  image_url: string;
-  price: number;
-  quantity: number;
+    id: string;
+    title: string;
+    image_url: string;
+    price: number;
+    quantity: number;
 }
 
 const Cart: React.FC = () => {
-  const { increment, decrement, products } = useCart();
+    const { increment, decrement, products } = useCart();
 
-  function handleIncrement(id: string): void {
-    // TODO
-    increment(id);
-  }
+    function handleIncrement(id: string): void {
+        increment(id);
+    }
 
-  function handleDecrement(id: string): void {
-    // TODO
-    decrement(id);
-  }
+    function handleDecrement(id: string): void {
+        decrement(id);
+    }
 
-  const cartTotal = useMemo(() => {
-    // TODO RETURN THE SUM OF THE QUANTITY OF THE PRODUCTS IN THE CART
+    const cartTotal = useMemo(() => {
+        const total = products.reduce(
+            (accumulator, product) => {
+                const productsSubTotal = product.price * product.quantity;
 
-    const productsPriceCount = products?.map(productItem => {
-      return productItem.quantity * productItem.price;
-    });
+                return accumulator + productsSubTotal;
+            },
+            // This is the initial value
+            0,
+        );
 
-    const totalPriceCart = sum(productsPriceCount);
+        return formatValue(total);
+    }, [products]);
 
-    return formatValue(totalPriceCart);
-  }, [products]);
+    const totalItensInCart = useMemo(() => {
+        const total = products.reduce(
+            (accumulator, product) => {
+                const productsQuantity = product.quantity;
 
-  const totalItensInCart = useMemo(() => {
-    // TODO RETURN THE SUM OF THE QUANTITY OF THE PRODUCTS IN THE CART
+                return accumulator + productsQuantity;
+            },
+            // This is the initial value
+            0,
+        );
 
-    const qtdProducts = products?.map(productItem => {
-      return productItem.quantity;
-    });
+        return total;
+    }, [products]);
 
-    const productsCount = sum(qtdProducts);
+    return (
+        <Container>
+            <ProductContainer>
+                <ProductList
+                    data={products}
+                    keyExtractor={item => item.id}
+                    ListFooterComponent={<View />}
+                    ListFooterComponentStyle={{
+                        height: 80,
+                    }}
+                    renderItem={({ item }: { item: Product }) => (
+                        <Product>
+                            <ProductImage source={{ uri: item.image_url }} />
+                            <ProductTitleContainer>
+                                <ProductTitle>{item.title}</ProductTitle>
+                                <ProductPriceContainer>
+                                    <ProductSinglePrice>
+                                        {formatValue(item.price)}
+                                    </ProductSinglePrice>
 
-    return productsCount;
-  }, [products]);
+                                    <TotalContainer>
+                                        <ProductQuantity>{`${item.quantity}x`}</ProductQuantity>
 
-  return (
-    <Container>
-      <ProductContainer>
-        <ProductList
-          data={products}
-          keyExtractor={item => item.id}
-          ListFooterComponent={<View />}
-          ListFooterComponentStyle={{
-            height: 80,
-          }}
-          renderItem={({ item }: { item: Product }) => (
-            <Product>
-              <ProductImage source={{ uri: item.image_url }} />
-              <ProductTitleContainer>
-                <ProductTitle>{item.title}</ProductTitle>
-                <ProductPriceContainer>
-                  <ProductSinglePrice>
-                    {formatValue(item.price)}
-                  </ProductSinglePrice>
-
-                  <TotalContainer>
-                    <ProductQuantity>{`${item.quantity}x`}</ProductQuantity>
-
-                    <ProductPrice>
-                      {formatValue(item.price * item.quantity)}
-                    </ProductPrice>
-                  </TotalContainer>
-                </ProductPriceContainer>
-              </ProductTitleContainer>
-              <ActionContainer>
-                <ActionButton
-                  testID={`increment-${item.id}`}
-                  onPress={() => handleIncrement(item.id)}
-                >
-                  <FeatherIcon name="plus" color="#E83F5B" size={16} />
-                </ActionButton>
-                <ActionButton
-                  testID={`decrement-${item.id}`}
-                  onPress={() => handleDecrement(item.id)}
-                >
-                  <FeatherIcon name="minus" color="#E83F5B" size={16} />
-                </ActionButton>
-              </ActionContainer>
-            </Product>
-          )}
-        />
-      </ProductContainer>
-      <TotalProductsContainer>
-        <FeatherIcon name="shopping-cart" color="#fff" size={24} />
-        <TotalProductsText>{`${totalItensInCart} itens`}</TotalProductsText>
-        <SubtotalValue>{cartTotal}</SubtotalValue>
-      </TotalProductsContainer>
-    </Container>
-  );
+                                        <ProductPrice>
+                                            {formatValue(
+                                                item.price * item.quantity,
+                                            )}
+                                        </ProductPrice>
+                                    </TotalContainer>
+                                </ProductPriceContainer>
+                            </ProductTitleContainer>
+                            <ActionContainer>
+                                <ActionButton
+                                    testID={`increment-${item.id}`}
+                                    onPress={() => handleIncrement(item.id)}
+                                >
+                                    <FeatherIcon
+                                        name="plus"
+                                        color="#E83F5B"
+                                        size={16}
+                                    />
+                                </ActionButton>
+                                <ActionButton
+                                    testID={`decrement-${item.id}`}
+                                    onPress={() => handleDecrement(item.id)}
+                                >
+                                    <FeatherIcon
+                                        name="minus"
+                                        color="#E83F5B"
+                                        size={16}
+                                    />
+                                </ActionButton>
+                            </ActionContainer>
+                        </Product>
+                    )}
+                />
+            </ProductContainer>
+            <TotalProductsContainer>
+                <FeatherIcon name="shopping-cart" color="#fff" size={24} />
+                <TotalProductsText>{`${totalItensInCart} itens`}</TotalProductsText>
+                <SubtotalValue>{cartTotal}</SubtotalValue>
+            </TotalProductsContainer>
+            {/* <FloatingCart /> */}
+        </Container>
+    );
 };
 
 export default Cart;

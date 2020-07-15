@@ -4,11 +4,11 @@ import { useNavigation } from "@react-navigation/native";
 
 import FeatherIcon from "react-native-vector-icons/Feather";
 import {
-  Container,
-  CartPricing,
-  CartButton,
-  CartButtonText,
-  CartTotalPrice,
+    Container,
+    CartPricing,
+    CartButton,
+    CartButtonText,
+    CartTotalPrice,
 } from "./styles";
 
 import formatValue from "../../utils/formatValue";
@@ -20,49 +20,53 @@ import { useCart } from "../../hooks/cart";
 // Navegação no clique do TouchableHighlight
 
 const FloatingCart: React.FC = () => {
-  const { products } = useCart();
+    const { products } = useCart();
 
-  const navigation = useNavigation();
+    const navigation = useNavigation();
 
-  const cartTotal = useMemo(() => {
-    // TODO RETURN THE SUM OF THE PRICE FROM ALL ITEMS IN THE CART
+    const cartTotal = useMemo(() => {
+        const total = products.reduce(
+            (accumulator, product) => {
+                const productsSubTotal = product.price * product.quantity;
 
-    const productsPriceCount = products?.map(productItem => {
-      return productItem.quantity * productItem.price;
-    });
+                return accumulator + productsSubTotal;
+            },
+            // This is the initial value
+            0,
+        );
 
-    const totalPriceCart = sum(productsPriceCount);
+        return formatValue(total);
+    }, [products]);
 
-    return formatValue(totalPriceCart);
-  }, [products]);
+    const totalItensInCart = useMemo(() => {
+        const total = products.reduce(
+            (accumulator, product) => {
+                const productsQuantity = product.quantity;
 
-  const totalItensInCart = useMemo(() => {
-    // TODO RETURN THE SUM OF THE QUANTITY OF THE PRODUCTS IN THE CART
+                return accumulator + productsQuantity;
+            },
+            // This is the initial value
+            0,
+        );
 
-    const qtdProducts = products?.map(productItem => {
-      return productItem.quantity;
-    });
+        return total;
+    }, [products]);
 
-    const productsCount = sum(qtdProducts);
+    return (
+        <Container>
+            <CartButton
+                testID="navigate-to-cart-button"
+                onPress={() => navigation.navigate("Cart")}
+            >
+                <FeatherIcon name="shopping-cart" size={24} color="#fff" />
+                <CartButtonText>{`${totalItensInCart} itens`}</CartButtonText>
+            </CartButton>
 
-    return productsCount;
-  }, [products]);
-
-  return (
-    <Container>
-      <CartButton
-        testID="navigate-to-cart-button"
-        onPress={() => navigation.navigate("Cart")}
-      >
-        <FeatherIcon name="shopping-cart" size={24} color="#fff" />
-        <CartButtonText>{`${totalItensInCart} itens`}</CartButtonText>
-      </CartButton>
-
-      <CartPricing>
-        <CartTotalPrice>{cartTotal}</CartTotalPrice>
-      </CartPricing>
-    </Container>
-  );
+            <CartPricing>
+                <CartTotalPrice>{cartTotal}</CartTotalPrice>
+            </CartPricing>
+        </Container>
+    );
 };
 
 export default FloatingCart;
